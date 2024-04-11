@@ -1,0 +1,48 @@
+# Perform a simple GET request
+curl [URL]
+
+# Save response to a file
+curl -o [output_file] [URL]
+
+# Follow redirects
+curl -L [URL]
+
+# Send POST data as form-urlencoded
+curl -X POST -d "key1=value1&key2=value2" [URL]
+
+# Include custom headers
+curl -H "HeaderName: Value" [URL]
+
+# Set User-Agent
+curl -A "User-Agent-String" [URL]
+
+# Set Referer
+curl -e "Referer-URL" [URL]
+
+# Basic authentication
+curl -u username:password [URL]
+
+# Digest authentication
+curl --digest -u username:password [URL]
+
+# FTP Upload
+curl -T [file] ftp://[username]:[password]@[host]/[path]
+
+# FTP Download
+curl -o [output_file] ftp://[username]:[password]@[host]/[path]
+
+# Verbose output
+curl -v [URL]
+
+# Silent mode
+curl -s [URL]
+
+# Timeout
+curl --max-time [seconds] [URL]
+
+# Continue download
+curl -C - -O [URL]
+
+# Insecure SSL
+curl -k [URL]
+
