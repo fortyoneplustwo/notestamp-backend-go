@@ -12,6 +12,11 @@ import (
 	"notestamp/auth"
 	"notestamp/project"
 	"notestamp/user"
+
+  "context"
+  // "github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 func main() {
@@ -19,7 +24,7 @@ func main() {
     log.Fatalf("Error loading .env file: %v", err)
   }
 
-  // Initialize db
+  // Initialize db service
   dbUser := os.Getenv("DB_USER")
   dbName := os.Getenv("DB_NAME")
   dbPassword := os.Getenv("DB_PW")
@@ -29,10 +34,19 @@ func main() {
     panic(err)
   }
 
+  // Initialize s3 service
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		log.Fatal(err)
+	}
+	s3Client := s3.NewFromConfig(cfg)
+
   // Initialize stores
   userStore := user.NewUserDB(db)
   projectStore := project.NewProjectDB(db)
   revokedStore := auth.NewRevokedDB(db)
+  mediaStore := project.NewMediaBucket("timestampdocsbucket", s3Client)
+  notesStore := project.NewNotesBucket("timestampdocsbucket", s3Client)
 
   // Create router
   router := mux.NewRouter()
@@ -40,7 +54,7 @@ func main() {
   // Create handlers
   home := HomeHandler{}
   auth := auth.NewAuthHandler(userStore, revokedStore)
-  project := project.NewProjectHandler(projectStore, userStore, revokedStore)
+  project := project.NewProjectHandler(projectStore, userStore, mediaStore, notesStore, revokedStore)
 
   // Register routes
   router.HandleFunc("/", home.ServeHTTP)
@@ -55,11 +69,9 @@ func main() {
   router.HandleFunc("/project/save", project.Save).Methods("POST")
   router.HandleFunc("/project/get/{title}", project.Get).Methods("GET")
   router.HandleFunc("/project/list", project.List).Methods("GET")
-  router.HandleFunc("/project/delete/{title}", project.Delete).Methods("GET")
-
-  router.HandleFunc("/media/get", project.ServeHTTP)
-  router.HandleFunc("/media/stream", project.ServeHTTP)
-
+  router.HandleFunc("/project/delete/{title}", project.Delete).Methods("DELETE")
+  router.HandleFunc("/media/download/{title}", project.DownloadMedia).Methods("GET")
+  router.HandleFunc("/media/stream/{title}", project.ServeHTTP).Methods("GET")
 
   // Serve
   http.ListenAndServe(":8000", router)
