@@ -1,7 +1,12 @@
 package project
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
+
+	// "fmt"
+	"io"
 	"net/http"
 	"notestamp/auth"
 	"notestamp/user"
@@ -67,7 +72,7 @@ func (h *ProjectHandler) Save(w http.ResponseWriter, r *http.Request) {
     }
   }
 
-  notesFile, _, err := r.FormFile("content")
+  notesFile, _, err := r.FormFile("notesFile")
   if err != nil {
     http.Error(w, err.Error(), http.StatusBadRequest)
     return
@@ -208,11 +213,7 @@ func (p *ProjectHandler) List(w http.ResponseWriter, r *http.Request) {
   }
 
   w.Header().Set("Content-Type", "application/json")
-  _, err = w.Write(jpayload)
-  if err != nil {
-    http.Error(w, err.Error(), http.StatusInternalServerError)
-    return
-  }
+  w.Write(jpayload)
 }
 
 
@@ -259,7 +260,6 @@ func (p *ProjectHandler) Get(w http.ResponseWriter, r *http.Request) {
 
   // Set media source if not already set
   domain := "http://localhost:8080"
-
   if project.Src == "" {
     if project.Format == "audio" {
       project.Src = domain + "/media/stream/" + project.Title
@@ -267,15 +267,48 @@ func (p *ProjectHandler) Get(w http.ResponseWriter, r *http.Request) {
       project.Src = domain + "/media/download/" + project.Title
     }
   }
-  
-  payload, err := json.Marshal(project)
+
+  // Get notes file
+  notes, err := p.notesStore.Get(uid, project.Title + ".stmp")
+  if err != nil {
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+
+  notesContent := new(bytes.Buffer)
+  chunk := make([]byte, 1024)
+  for {
+    n, err := notes.Data.Read(chunk)
+    if err == io.EOF {
+      break
+    }
+    if err != nil {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+      return
+    }
+    if _, err = notesContent.Write(chunk[:n]); err != nil {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+      return
+    }
+  }
+  defer notes.Data.Close()
+
+  payload := make(map[string]string)
+  payload["title"] = project.Title
+  payload["type"] = project.Format
+  payload["label"] = project.Label
+  payload["src"] = project.Src
+  payload["mimetype"] = project.Mimetype
+  payload["notes"] = notesContent.String()
+
+  jpayload, err := json.Marshal(payload)
   if err != nil {
     http.Error(w, err.Error(), http.StatusInternalServerError)
     return
   }
 
   w.Header().Set("Content-Type", "application/json")
-  w.Write(payload)
+  w.Write(jpayload)
 }
 
 
@@ -314,7 +347,19 @@ func (p *ProjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
   http.SetCookie(w, accCookie)
   http.SetCookie(w, refCookie)
 
-  err = p.projectStore.Remove(uid, title)
+  deletedProject, err := p.projectStore.Remove(uid, title)
+  if err != nil {
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+
+  err = p.notesStore.Remove(uid, deletedProject.Title + ".stmp")
+  if err != nil {
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+
+  err = p.mediaStore.Remove(uid, deletedProject.Title + "." + strings.Split(deletedProject.Mimetype, "/")[1])
   if err != nil {
     http.Error(w, err.Error(), http.StatusInternalServerError)
     return
@@ -381,26 +426,38 @@ func (h *ProjectHandler) DownloadMedia(w http.ResponseWriter, r *http.Request) {
     return
   }
 
-  media, err := h.mediaStore.Get(uid, title + strings.Split(project.Mimetype, "/")[1])
+  media, err := h.mediaStore.Get(uid, title + "." + strings.Split(project.Mimetype, "/")[1])
   if err != nil {
     http.Error(w, err.Error(), http.StatusInternalServerError)
     return
   }
 
-  var buff []byte
-  _, err = media.Data.Read(buff)
-  if err != nil {
-    http.Error(w, err.Error(), http.StatusInternalServerError)
-    return
+  buff := new(bytes.Buffer)
+  chunk := make([]byte, 1024)
+  for {
+    n, err := media.Data.Read(chunk)
+    if err == io.EOF {
+      break
+    }
+    if err != nil {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+      return
+    }
+    if _, err := buff.Write(chunk[:n]); err != nil {
+      http.Error(w,err.Error(), http.StatusInternalServerError)
+      return
+    }
   }
   defer media.Data.Close()
 
   w.Header().Set("Content-Type", project.Mimetype)
-  w.Write(buff)
+  w.Write(buff.Bytes())
 }
 
 
 func (h *ProjectHandler) StreamMedia(w http.ResponseWriter, r *http.Request) {
+  fmt.Println("in")
+  
   title := mux.Vars(r)["title"]
   if title == "" {
     http.Error(w, "No title provided", http.StatusBadRequest)
@@ -441,7 +498,7 @@ func (h *ProjectHandler) StreamMedia(w http.ResponseWriter, r *http.Request) {
     return
   }
 
-  url, err := h.mediaStore.Stream(uid, title + strings.Split(project.Mimetype, "/")[1])
+  url, err := h.mediaStore.Stream(uid, title + "." + strings.Split(project.Mimetype, "/")[1])
   if err != nil {
     http.Error(w, err.Error(), http.StatusInternalServerError)
     return

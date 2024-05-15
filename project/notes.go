@@ -7,7 +7,7 @@ import (
 
 type Notes struct {
   Title string
-  Data io.Reader
+  Data io.ReadCloser
 }
 
 func (m *Notes) Validate() error {
@@ -21,7 +21,7 @@ func (m *Notes) Validate() error {
 }
 
 // Constructor
-func NewNotes(title string, data io.Reader) (Notes, error) {
+func NewNotes(title string, data io.ReadCloser) (Notes, error) {
   n := Notes{
     Title: title + ".stmp",
     Data: data,

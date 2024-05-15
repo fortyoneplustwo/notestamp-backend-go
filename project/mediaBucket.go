@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+  "github.com/aws/aws-sdk-go/aws/awserr"
 )
 
 type MediaBucket struct {
@@ -50,7 +51,7 @@ func (b *MediaBucket) Get(uid int, title string) (Media, error) {
   if err != nil {
     return Media{}, err
   }
-  defer result.Body.Close()
+  // defer result.Body.Close()
 
   return Media{Title: title, Data: result.Body}, nil
 }
@@ -83,7 +84,9 @@ func (b *MediaBucket) Remove(uid int, title string) error {
     Key: aws.String(key),
 	})
   if err != nil {
-    return err
+    if aerr, ok := err.(awserr.Error); ok && aerr.Code() != "NotFound" {
+      return err
+    }
   }
 
   return nil

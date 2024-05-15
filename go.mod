@@ -4,6 +4,7 @@ go 1.22.0
 
 require (
 	github.com/alexedwards/argon2id v1.0.0
+	github.com/aws/aws-sdk-go v1.53.0
 	github.com/aws/aws-sdk-go-v2/config v1.27.11
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.53.1
 	github.com/golang-jwt/jwt/v5 v5.2.1
@@ -13,7 +14,7 @@ require (
 )
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.26.1 // indirect; direct
+	github.com/aws/aws-sdk-go-v2 v1.26.1 // direct
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.2 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.11 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.1 // indirect

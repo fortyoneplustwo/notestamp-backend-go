@@ -1,9 +1,10 @@
 package project
 
-
 import (
 	"context"
+	"fmt"
 	"strconv"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
@@ -23,6 +24,8 @@ func NewNotesBucket(bucketName string, s *s3.Client) *NotesBucket {
 // Implement NotesStore interface
 func (b *NotesBucket) Add(uid int, m Notes) error {
   key := strconv.Itoa(uid) + "/" + m.Title
+
+  fmt.Println(context.TODO())
 
   _, err := b.client.PutObject(context.TODO(), &s3.PutObjectInput{
 			Bucket: aws.String(b.bucketName),

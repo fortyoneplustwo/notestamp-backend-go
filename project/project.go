@@ -18,19 +18,15 @@ func (p *Project) Validate() error {
   if p.Title == "" {
     return errors.New("Title is empty")
   }
-
   if p.Format == "" {
     return errors.New("Format is empty")
   }
-
   if p.Label == "" {
     return errors.New("Label is empty")
   }
-
-  if p.Src != "" && p.Mimetype != "" {
+  if p.Src != "" && p.Mimetype != "" { // Projects cannot be saved without media
     return errors.New("Src and Mimetype must be mutually exclusive")
   }
-
   return nil
 }
 

@@ -32,6 +32,7 @@ func (p *ProjectDB) Add(uid int, proj Project) error {
   if err != nil {
     return err
   }
+
   
   return nil
 }
@@ -82,20 +83,26 @@ func (p *ProjectDB) List(uid int) ([]string, error) {
 }
 
 
-func (p *ProjectDB) Remove(uid int, title string) error {
+func (p *ProjectDB) Remove(uid int, title string) (Project, error) {
+  var project Project
+  project, err := p.Get(uid, title)
+  if err != nil {
+    return project, err
+  }
+
   stmt, err := p.db.Prepare("DELETE FROM projects WHERE id = $1")
   if err != nil {
-    return err
+    return project, err
   }
 
   pid := strconv.Itoa(uid) + "/" + title
 
   _, err = stmt.Exec(pid)
   if err != nil {
-    return err
+    return project, err
   }
   
-  return nil
+  return project, nil
 }
 
 

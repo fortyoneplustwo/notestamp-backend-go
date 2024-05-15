@@ -71,7 +71,7 @@ func main() {
   router.HandleFunc("/project/list", project.List).Methods("GET")
   router.HandleFunc("/project/delete/{title}", project.Delete).Methods("DELETE")
   router.HandleFunc("/media/download/{title}", project.DownloadMedia).Methods("GET")
-  router.HandleFunc("/media/stream/{title}", project.ServeHTTP).Methods("GET")
+  router.HandleFunc("/media/stream/{title}", project.StreamMedia).Methods("GET")
 
   // Serve
   http.ListenAndServe(":8000", router)
