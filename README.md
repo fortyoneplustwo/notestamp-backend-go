@@ -15,7 +15,7 @@ Integration tests written in bash using `curl`.
 
 ## API
 `POST /auth/register`  
-**Description**: Create a user account.
+**Description**: Create a user account.  
 **Accepts**: Form with fields: `username` and `password`.
 
 `POST /auth/login`   
@@ -31,22 +31,22 @@ Integration tests written in bash using `curl`.
 **Produces**: JSON containing the updated list of projects after save.
 
 `GET /project/list`  
-**Description**: Get a list of the user's saved projects.
+**Description**: Get a list of the user's saved projects.  
 **Produces**: JSON containing a list of projects.
 
 `GET /project/get/{title}`  
-**Description**: Retrieve saved project with provided title.
+**Description**: Retrieve saved project with provided title.  
 **Produces**: JSON containing metadata and notes content.
 
 `DELETE /project/delete/{title}`  
-**Description**: Delete a project with provided title.
+**Description**: Delete a project with provided title.  
 **Produces**: JSON containing the updated list of projects after deletion.
 
 `GET /media/download/{title}`  
-**Description**: Download the media related to the project with provided title.
+**Description**: Download the media related to the project with provided title.  
 **Produces**: A buffer containing the media.
 
-`GET /media/stream/{title}`
-**Description**: Stream the media related to the project with provided title.
+`GET /media/stream/{title}`  
+**Description**: Stream the media related to the project with provided title.  
 **Produces**: JSON containing a url which can be used to stream the media directly from the media store.
 
