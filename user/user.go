@@ -1,13 +1,10 @@
 package user
 
-import (
-)
+import ()
 
 type User struct {
-  Id int `json:"-"` 
-  Email string `json:"email"`
-  Password string `json:"-"`
-  Directory *string `json:"dir"`
+	Id        int     `json:"-"`
+	Email     string  `json:"email"`
+	Password  string  `json:"-"`
+	Directory *string `json:"dir"`
 }
-
-
