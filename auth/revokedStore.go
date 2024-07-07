@@ -1,6 +1,8 @@
 package auth
 
-import "time"
+import (
+  "time"
+)
 
 type RevokedStore interface {
 	Add(string, int, time.Time) error

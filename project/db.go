@@ -14,7 +14,7 @@ func NewProjectDB(db *sql.DB) *ProjectDB {
 }
 
 // Implement ProjectStore interface
-func (p *ProjectDB) Add(uid int, proj Project) error {
+func (p *ProjectDB) Add(uid int, proj Metadata) error {
 	stmt, err := p.db.Prepare(`
     INSERT INTO projects (id, format, title, label, src, mime_type, user_id) 
     VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -33,10 +33,10 @@ func (p *ProjectDB) Add(uid int, proj Project) error {
 	return nil
 }
 
-func (p *ProjectDB) Get(uid int, title string) (Project, error) {
+func (p *ProjectDB) Get(uid int, title string) (Metadata, error) {
 	pid := strconv.Itoa(uid) + "/" + title
 
-	project := Project{}
+	project := Metadata{}
 	row := p.db.QueryRow("SELECT title, label, format, src, mime_type FROM projects WHERE id = $1", pid)
 	if err := row.Scan(
 		&project.Title,
@@ -45,7 +45,7 @@ func (p *ProjectDB) Get(uid int, title string) (Project, error) {
 		&project.Src,
 		&project.Mimetype,
 	); err != nil {
-		return Project{}, err
+		return Metadata{}, err
 	}
 
 	return project, nil
@@ -76,8 +76,8 @@ func (p *ProjectDB) List(uid int) ([]string, error) {
 	return projects, nil
 }
 
-func (p *ProjectDB) Remove(uid int, title string) (Project, error) {
-	var project Project
+func (p *ProjectDB) Remove(uid int, title string) (Metadata, error) {
+	var project Metadata
 	project, err := p.Get(uid, title)
 	if err != nil {
 		return project, err

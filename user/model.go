@@ -1,7 +1,5 @@
 package user
 
-import ()
-
 type User struct {
 	Id        int     `json:"-"`
 	Email     string  `json:"email"`

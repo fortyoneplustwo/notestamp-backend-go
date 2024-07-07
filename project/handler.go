@@ -16,7 +16,7 @@ import (
 )
 
 type ProjectHandler struct {
-	projectStore ProjectStore
+	metadataStore MetadataStore
 	userStore    user.UserStore
 	mediaStore   MediaStore
 	notesStore   NotesStore
@@ -24,13 +24,13 @@ type ProjectHandler struct {
 }
 
 // Constructor
-func NewProjectHandler(ps ProjectStore,
+func NewProjectHandler(ps MetadataStore,
 	us user.UserStore,
 	ms MediaStore,
 	ns NotesStore,
 	rs auth.RevokedStore) *ProjectHandler {
 	return &ProjectHandler{
-		projectStore: ps,
+		metadataStore: ps,
 		userStore:    us,
 		mediaStore:   ms,
 		notesStore:   ns,
@@ -81,7 +81,7 @@ func (h *ProjectHandler) Save(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Process form data (project metadata, media, and notes)
-	project, err := NewProject([]byte(metadata))
+	project, err := NewMetadata([]byte(metadata))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -137,14 +137,14 @@ func (h *ProjectHandler) Save(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Save project to projectStore
-	err = h.projectStore.Add(uid, project)
+	err = h.metadataStore.Add(uid, project)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Return updated directory
-	dir, err := h.projectStore.List(uid)
+	dir, err := h.metadataStore.List(uid)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -192,7 +192,7 @@ func (p *ProjectHandler) List(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, accCookie)
 	http.SetCookie(w, refCookie)
 
-	projects, err := p.projectStore.List(uid)
+	projects, err := p.metadataStore.List(uid)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -246,7 +246,7 @@ func (p *ProjectHandler) Get(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, accCookie)
 	http.SetCookie(w, refCookie)
 
-	project, err := p.projectStore.Get(uid, title)
+	project, err := p.metadataStore.Get(uid, title)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -340,7 +340,7 @@ func (p *ProjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, accCookie)
 	http.SetCookie(w, refCookie)
 
-	deletedProject, err := p.projectStore.Remove(uid, title)
+	deletedProject, err := p.metadataStore.Remove(uid, title)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -359,7 +359,7 @@ func (p *ProjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return updated directory
-	dir, err := p.projectStore.List(uid)
+	dir, err := p.metadataStore.List(uid)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -412,7 +412,7 @@ func (h *ProjectHandler) DownloadMedia(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, accCookie)
 	http.SetCookie(w, refCookie)
 
-	project, err := h.projectStore.Get(uid, title)
+	project, err := h.metadataStore.Get(uid, title)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -483,7 +483,7 @@ func (h *ProjectHandler) StreamMedia(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, accCookie)
 	http.SetCookie(w, refCookie)
 
-	project, err := h.projectStore.Get(uid, title)
+	project, err := h.metadataStore.Get(uid, title)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
