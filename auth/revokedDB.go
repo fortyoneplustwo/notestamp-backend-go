@@ -23,7 +23,7 @@ func (r *RevokedDB) Add(token string, id int, exp time.Time) error {
 	}
 	defer stmt.Close()
 
-	if _, err := stmt.Exec(token, id, exp); err != nil {
+	if _, err := stmt.Exec(token, id, exp.Unix()); err != nil {
 		return err
 	}
 

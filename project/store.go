@@ -5,6 +5,7 @@ type MetadataStore interface {
 	Get(uid int, title string) (Metadata, error)
 	List(uid int) ([]string, error)
 	Remove(uid int, title string) (Metadata, error)
+  FindMediaDup(uid int, title string) (bool, error)
 }
 
 type MediaStore interface {

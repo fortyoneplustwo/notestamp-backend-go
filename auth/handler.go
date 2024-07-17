@@ -2,11 +2,12 @@ package auth
 
 import (
 	"encoding/json"
-	"github.com/alexedwards/argon2id"
 	"net/http"
 	"notestamp/user"
 	"runtime"
 	"time"
+
+	"github.com/alexedwards/argon2id"
 )
 
 type AuthHandler struct {
@@ -116,7 +117,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	// Validation
 	accToken, err := r.Cookie("access-token")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+    http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 	refToken, err := r.Cookie("refresh-token")
@@ -142,7 +143,8 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Cleanup expired tokens (concurrently) from revoked db
-	go h.revokedStore.Cleanup(id)
+  // TODO: Turn this into a database trigger
+	// go h.revokedStore.Cleanup(id)
 
 	// Set new cookies to empty & expired tokens
 	accCookie := http.Cookie{

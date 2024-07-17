@@ -1,17 +1,21 @@
 #!/bin/bash
 
+# usage
+if [ "$#" -ne 0 ]; then
+    echo "Usage: $0"
+    exit 1
+fi
+
 url="http://localhost:8000/"
-email="oli.amb5@gmail.com"
-pw="mypassword"
-endpoint='project/list'
+endpoint='auth/logout'
 
 # grab cookies
 atk=$(grep 'access-token' cookies.txt | awk '{print $NF}')
 rtk=$(grep 'refresh-token' cookies.txt | awk '{print $NF}')
 
-# list projects
+# log out
 echo "Endpoint: "$endpoint
-curl -X GET \
+curl -X POST  \
   -b "refresh-token="$rtk";access-token="$atk \
-  -i $url$endpoint
-echo
+  -c cookies.txt -i $url$endpoint
+echo -e "\n"

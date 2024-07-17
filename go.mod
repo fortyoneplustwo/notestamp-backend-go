@@ -14,6 +14,11 @@ require (
 )
 
 require (
+	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
+	golang.org/x/tools v0.6.0 // indirect
+)
+
+require (
 	github.com/aws/aws-sdk-go-v2 v1.26.1 // direct
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.2 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.11 // indirect

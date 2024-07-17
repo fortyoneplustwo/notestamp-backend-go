@@ -4,7 +4,6 @@ import (
 	"context"
 	"strconv"
 	"time"
-	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -27,8 +26,6 @@ func NewNotesBucket(bucketName string, s *s3.Client) *NotesBucket {
 // Implement NotesStore interface
 func (b *NotesBucket) Add(uid int, m Notes) error {
 	key := strconv.Itoa(uid) + "/" + m.Title
-
-	fmt.Println(context.TODO())
 
 	_, err := b.client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: aws.String(b.bucketName),
@@ -83,10 +80,12 @@ func NewMediaBucket(bucketName string, s *s3.Client) *MediaBucket {
 }
 
 // Implement MediaStore interface
+
 func (b *MediaBucket) Add(uid int, m Media) error {
+
 	key := strconv.Itoa(uid) + "/" + m.Title
 
-	_, err := b.client.PutObject(context.TODO(), &s3.PutObjectInput{
+  _, err := b.client.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket: aws.String(b.bucketName),
 		Key:    aws.String(key),
 		Body:   m.Data,
@@ -94,6 +93,8 @@ func (b *MediaBucket) Add(uid int, m Media) error {
 	if err != nil {
 		return err
 	}
+  // fmt.Print(key)
+  // fmt.Printf("\n%v", result)
 
 	return nil
 }
@@ -108,7 +109,6 @@ func (b *MediaBucket) Get(uid int, title string) (Media, error) {
 	if err != nil {
 		return Media{}, err
 	}
-	// defer result.Body.Close()
 
 	return Media{Title: title, Data: result.Body}, nil
 }

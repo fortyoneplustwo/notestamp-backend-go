@@ -1,8 +1,13 @@
 #!/bin/bash
 
+if [ "$#" -ne 1 ]; then
+  echo "Usage: $0 project_title"
+    exit 1
+fi
+
+title_encoded=$(jq -rn --arg str "$1" '$str|@uri')
+
 url="http://localhost:8000/"
-email="oli.amb5@gmail.com"
-pw="mypassword"
 endpoint='project/delete/'
 
 # grab cookies
@@ -10,10 +15,10 @@ atk=$(grep 'access-token' cookies.txt | awk '{print $NF}')
 rtk=$(grep 'refresh-token' cookies.txt | awk '{print $NF}')
 
 # delete project
-query="my%20project%203"
-echo "Endpoint: "$endpoint$query
-curl -X GET \
+echo "Endpoint: "$endpoint$title_encoded
+curl -X DELETE \
   -b "refresh-token="$rtk";access-token="$atk \
-  -i $url$endpoint$query
-echo "-----------------------------------------------------"
+  -c cookies.txt \
+  -i $url$endpoint$title_encoded
+echo -e "\n"
 

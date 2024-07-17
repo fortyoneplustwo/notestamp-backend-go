@@ -1,15 +1,21 @@
 #!/bin/bash
 
+if [ "$#" -ne 1 ]; then
+  echo "Usage: $0 project_title"
+    exit 1
+fi
+
+title_encoded=$(jq -rn --arg str "$1" '$str|@uri')
+
 url="http://localhost:8000/"
-endpoint='media/stream/'
+endpoint='project/get/'
 
 # grab cookies
 atk=$(grep 'access-token' cookies.txt | awk '{print $NF}')
 rtk=$(grep 'refresh-token' cookies.txt | awk '{print $NF}')
 
 # Get project
-query="Bitcoin"
 echo "Endpoint: "$endpoint$query
 curl -X GET \
   -b "refresh-token="$rtk";access-token="$atk \
-  -i $url$endpoint$query
+  -i $url$endpoint$title_encoded
