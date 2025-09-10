@@ -1,97 +1,137 @@
 package main
 
 import (
-	"database/sql"
-	"github.com/gorilla/mux"
-	"github.com/joho/godotenv"
+	"context"
+	"fmt"
 	"log"
 	"net/http"
-	"os"
-	_ "github.com/lib/pq"
-	"context"
-
 	"notestamp/auth"
-	"notestamp/project"
+	"notestamp/handler"
+	"notestamp/media"
+	"notestamp/metadata"
+	staging "notestamp/metadata/staging_area"
+	"notestamp/middleware"
+	"notestamp/notes"
 	"notestamp/user"
+	"os"
+	"time"
 
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"cloud.google.com/go/storage"
+	"github.com/go-redis/redis"
+	"github.com/joho/godotenv"
+
+	firebase "firebase.google.com/go"
+	"google.golang.org/api/option"
 )
 
-type App struct {
-  Router *mux.Router
-  UserStore user.UserStore
-  MetadataStore project.MetadataStore
-  NotesStore project.NotesStore
-  MediaStore project.MediaStore
-  RevokedStore auth.RevokedStore
-}
-
-func (app *App) Initialize(db *sql.DB, s3Client *s3.Client, notesBucket string, mediaBucket string) {
-  // Initialize stores
-	app.UserStore = user.NewUserDB(db)
-	app.MetadataStore = project.NewProjectDB(db)
-	app.RevokedStore = auth.NewRevokedDB(db)
-	app.MediaStore = project.NewMediaBucket(mediaBucket, s3Client)
-	app.NotesStore = project.NewNotesBucket(notesBucket, s3Client)
-
-  // Register routes
-	app.Router = mux.NewRouter()
-
-	auth := auth.NewAuthHandler(app.UserStore, app.RevokedStore)
-	project := project.NewProjectHandler(
-    app.MetadataStore, 
-    app.UserStore, 
-    app.MediaStore, 
-    app.NotesStore, 
-    app.RevokedStore,
-  )
-
-	app.Router.HandleFunc("/auth", auth.ServeHTTP)
-	app.Router.HandleFunc("/auth/register", auth.Register).Methods("POST")
-	app.Router.HandleFunc("/auth/login", auth.Login).Methods("POST")
-	app.Router.HandleFunc("/auth/logout", auth.Logout).Methods("POST")
-	app.Router.HandleFunc("/auth/unregister", auth.Unregister).Methods("POST")
-
-	app.Router.HandleFunc("/project", project.ServeHTTP)
-	app.Router.HandleFunc("/project/save", project.Save).Methods("POST")
-	app.Router.HandleFunc("/project/get/{title}", project.Get).Methods("GET")
-	app.Router.HandleFunc("/project/list", project.List).Methods("GET")
-	app.Router.HandleFunc("/project/delete/{title}", project.Delete).Methods("DELETE")
-
-	app.Router.HandleFunc("/media/download/{title}", project.DownloadMedia).Methods("GET")
-	app.Router.HandleFunc("/media/stream/{title}", project.StreamMedia).Methods("GET")
-}
-
-func (app *App) Run(port string) {
-	http.ListenAndServe(port, app.Router)
-}
-
 func main() {
-  // Start psql service
 	if err := godotenv.Load("../.env"); err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
-	}
-	dbUser := os.Getenv("DB_USER")
-	dbName := os.Getenv("DB_NAME")
-	dbPassword := os.Getenv("DB_PW")
-	connStr := "user=" + dbUser + " dbname=" + dbName + " password=" + dbPassword
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
+		log.Print("No .env file found")
 	}
 
-  // Start s3 service
-	cfg, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		log.Fatal(err)
-	}
-	s3Client := s3.NewFromConfig(cfg)
-  notesBucket, mediaBucket := "timestampdocsbucket", "timestampdocsbucket"
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     os.Getenv("REDIS_ADDR"),
+		Password: "",
+		DB:       0,
+	})
 
-  // Start app
-  app := App{}
-  app.Initialize(db, s3Client, mediaBucket, notesBucket)
-  app.Run(":8000")
+	ctx := context.TODO()
+	sa := option.WithCredentialsFile(os.Getenv("FIREBASE_CONF"))
+	firebase, err := firebase.NewApp(ctx, nil, sa)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	firestoreClient, err := firebase.Firestore(ctx)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer func() {
+		err := firestoreClient.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+
+	storageClient, err := storage.NewClient(
+		ctx,
+		option.WithCredentialsFile(os.Getenv("FIREBASE_CONF")),
+	)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer func() {
+		err := storageClient.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+
+	userStore := user.NewUserStore(firestoreClient)
+	revokedStore := auth.NewRevokedTokenStore(firestoreClient)
+	stagingArea := staging.NewStagingArea(redisClient, time.Hour)
+	metadataStore := metadata.NewMetadataStore(firestoreClient)
+	mediaStore := media.NewMediaStore(storageClient, os.Getenv("NOTES_BUCKET"))
+	notesStore := notes.NewNotesStore(storageClient, os.Getenv("MEDIA_BUCKET"))
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST /register", handler.RegisterUser(userStore))
+	mux.HandleFunc("POST /login", handler.LoginUser(userStore, revokedStore))
+	mux.HandleFunc("DELETE /logout", handler.LogoutUser(revokedStore))
+	mux.HandleFunc(
+		"DELETE /deregister",
+		handler.DeregisterUser(
+			userStore,
+			metadataStore,
+			mediaStore,
+			notesStore,
+			revokedStore,
+		),
+	)
+
+	protectedMux := http.NewServeMux()
+	protectedMux.HandleFunc("GET /list", handler.ListMetadata(metadataStore))
+	protectedMux.HandleFunc(
+		"DELETE /remove",
+		handler.DeleteProject(metadataStore, mediaStore, notesStore),
+	)
+	protectedMux.HandleFunc(
+		"POST /save-without-media",
+		handler.StageWithoutMedia(stagingArea, notesStore),
+	)
+	protectedMux.HandleFunc(
+		"POST /save-with-media",
+		handler.StageWithMedia(stagingArea, mediaStore, notesStore),
+	)
+	protectedMux.HandleFunc(
+		"PUT /update-notes",
+		handler.UpdateProject(notesStore),
+	)
+	protectedMux.HandleFunc(
+		"POST /commit",
+		handler.PostSaveProject(
+			stagingArea,
+			metadataStore,
+			mediaStore,
+			notesStore,
+		),
+	)
+
+	mux.Handle("/api/", middleware.Authenticate(
+		http.StripPrefix("/api", protectedMux),
+		revokedStore,
+	))
+
+	server := http.Server{
+		Addr:              os.Getenv("PORT"),
+		Handler:           mux,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		ReadHeaderTimeout: 200 * time.Millisecond,
+	}
+
+	err = server.ListenAndServe()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error starting server: %v\n", err)
+	}
 }
-
