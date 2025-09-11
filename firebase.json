@@ -1,0 +1,11 @@
+{
+  "emulators": {
+    "singleProjectMode": true,
+    "storage": {
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true
+    }
+  }
+}

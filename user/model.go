@@ -1,8 +1,12 @@
 package user
 
+type Credentials struct {
+	Email    string `json:"email" firestore:"email"`
+	Password string `json:"password" firestore:"password"`
+}
+
 type User struct {
-	Id        int     `json:"-"`
-	Email     string  `json:"email"`
-	Password  string  `json:"-"`
-	Directory *string `json:"dir"`
+	Uid      string `json:"uid" firestore:"uid"`
+	Email    string `json:"email" firestore:"email"`
+	Password string `json:"password" firestore:"password"`
 }

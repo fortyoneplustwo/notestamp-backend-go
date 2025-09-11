@@ -1,0 +1,8 @@
+linters-settings:
+  whitespace:
+    indent: tab
+    tab-width: 2
+
+linters:
+  enable:
+    - whitespace
