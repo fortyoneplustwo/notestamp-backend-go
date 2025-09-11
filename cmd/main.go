@@ -67,7 +67,10 @@ func main() {
 		}
 	}()
 
-	userStore := user.NewUserStore(firestoreClient)
+	userStore := user.NewUserStore(
+		firestoreClient,
+		os.Getenv("USER_COLLECTION"),
+	)
 	revokedStore := auth.NewRevokedTokenStore(
 		firestoreClient,
 		os.Getenv("REVOKED_COLLECTION"),
