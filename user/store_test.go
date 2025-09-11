@@ -57,7 +57,7 @@ func TestUserAdd(t *testing.T) {
 		{
 			name: "Existent user",
 			setup: func(c *firestore.Client) {
-				docRef, _, _ := client.Collection("users").Add(
+				docRef, _, _ := client.Collection(os.Getenv("USER_COLLECTION")).Add(
 					context.TODO(),
 					Credentials{testEmail, testPwd},
 				)
@@ -73,7 +73,7 @@ func TestUserAdd(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup(client)
 			t.Cleanup(func() {
-				_, _ = client.Collection("users").Doc(testUid).Delete(context.TODO())
+				_, _ = client.Collection(os.Getenv("USER_COLLECTION")).Doc(testUid).Delete(context.TODO())
 			})
 
 			store := NewUserStore(client, os.Getenv("USER_COLLECTION"))
@@ -109,7 +109,7 @@ func TestUserGetByEmail(t *testing.T) {
 		{
 			name: "Existent user",
 			setup: func(c *firestore.Client) {
-				docRef, _, _ := client.Collection("users").Add(
+				docRef, _, _ := client.Collection(os.Getenv("USER_COLLECTION")).Add(
 					context.TODO(),
 					Credentials{testEmail, testPwd},
 				)
@@ -124,7 +124,7 @@ func TestUserGetByEmail(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup(client)
 			t.Cleanup(func() {
-				_, _ = client.Collection("users").Doc(testUid).Delete(context.TODO())
+				_, _ = client.Collection(os.Getenv("USER_COLLECTION")).Doc(testUid).Delete(context.TODO())
 			})
 
 			store := NewUserStore(client, os.Getenv("USER_COLLECTION"))
@@ -159,7 +159,7 @@ func TestUserGetById(t *testing.T) {
 		{
 			name: "Existent user",
 			setup: func(c *firestore.Client) {
-				docRef, _, _ := client.Collection("users").Add(
+				docRef, _, _ := client.Collection(os.Getenv("USER_COLLECTION")).Add(
 					context.TODO(),
 					Credentials{testEmail, testPwd},
 				)
@@ -174,7 +174,7 @@ func TestUserGetById(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup(client)
 			t.Cleanup(func() {
-				_, _ = client.Collection("users").Doc(testUid).Delete(context.TODO())
+				_, _ = client.Collection(os.Getenv("USER_COLLECTION")).Doc(testUid).Delete(context.TODO())
 			})
 
 			store := NewUserStore(client, os.Getenv("USER_COLLECTION"))
@@ -210,7 +210,7 @@ func TestUserRemove(t *testing.T) {
 		{
 			name: "Existent user",
 			setup: func(c *firestore.Client) {
-				docRef, _, _ := client.Collection("users").Add(
+				docRef, _, _ := client.Collection(os.Getenv("USER_COLLECTION")).Add(
 					context.TODO(),
 					Credentials{testEmail, testPwd},
 				)
@@ -225,7 +225,7 @@ func TestUserRemove(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup(client)
 			t.Cleanup(func() {
-				_, _ = client.Collection("users").Doc(testUid).Delete(context.TODO())
+				_, _ = client.Collection(os.Getenv("USER_COLLECTION")).Doc(testUid).Delete(context.TODO())
 			})
 
 			store := NewUserStore(client, os.Getenv("USER_COLLECTION"))

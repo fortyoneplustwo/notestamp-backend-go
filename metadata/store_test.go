@@ -54,7 +54,7 @@ func TestMetadataAdd(t *testing.T) {
 		{
 			name: "duplicate metadata",
 			setup: func(c *firestore.Client) {
-				client.Collection("projects").Doc(testUid).Set(
+				client.Collection(os.Getenv("METADATA_COLLECTION")).Doc(testUid).Set(
 					context.TODO(),
 					map[string]Metadata{FakeMetadata.Title: FakeMetadata},
 				)
@@ -69,7 +69,7 @@ func TestMetadataAdd(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup(client)
 			t.Cleanup(func() {
-				_, _ = client.Collection("projects").Doc(testUid).Delete(context.TODO())
+				_, _ = client.Collection(os.Getenv("METADATA_COLLECTION")).Doc(testUid).Delete(context.TODO())
 			})
 
 			store := NewMetadataStore(client, os.Getenv("METADATA_COLLECTION"))
@@ -99,7 +99,7 @@ func TestMetadataList(t *testing.T) {
 		{
 			name: "List with one item",
 			setup: func(client *firestore.Client) {
-				_, _ = client.Collection("projects").Doc(testUid).Set(
+				_, _ = client.Collection(os.Getenv("METADATA_COLLECTION")).Doc(testUid).Set(
 					context.TODO(),
 					map[string]Metadata{
 						FakeMetadata.Title: FakeMetadata,
@@ -113,7 +113,7 @@ func TestMetadataList(t *testing.T) {
 		{
 			name: "Empty list",
 			setup: func(client *firestore.Client) {
-				_, _ = client.Collection("projects").Doc(testUid).Set(
+				_, _ = client.Collection(os.Getenv("METADATA_COLLECTION")).Doc(testUid).Set(
 					context.TODO(),
 					map[string]string{},
 				)
@@ -128,7 +128,7 @@ func TestMetadataList(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup(client)
 			t.Cleanup(func() {
-				_, _ = client.Collection("projects").Doc(testUid).Delete(context.TODO())
+				_, _ = client.Collection(os.Getenv("METADATA_COLLECTION")).Doc(testUid).Delete(context.TODO())
 			})
 
 			store := NewMetadataStore(client, os.Getenv("METADATA_COLLECTION"))
@@ -166,7 +166,7 @@ func TestMetadataUpdate(t *testing.T) {
 		{
 			name: "Update metadata title",
 			setup: func(c *firestore.Client) {
-				_, _ = client.Collection("projects").Doc(testUid).Set(
+				_, _ = client.Collection(os.Getenv("METADATA_COLLECTION")).Doc(testUid).Set(
 					context.TODO(),
 					FakeMetadata,
 				)
@@ -187,7 +187,7 @@ func TestMetadataUpdate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup(client)
 			t.Cleanup(func() {
-				_, _ = client.Collection("projects").Doc(testUid).Delete(context.TODO())
+				_, _ = client.Collection(os.Getenv("METADATA_COLLECTION")).Doc(testUid).Delete(context.TODO())
 			})
 
 			store := NewMetadataStore(client, os.Getenv("METADATA_COLLECTION"))
@@ -218,7 +218,7 @@ func TestMetadataGet(t *testing.T) {
 		{
 			name: "Get test metadata",
 			setup: func(client *firestore.Client) {
-				_, _ = client.Collection("projects").Doc(testUid).Set(
+				_, _ = client.Collection(os.Getenv("METADATA_COLLECTION")).Doc(testUid).Set(
 					context.TODO(), map[string]Metadata{
 						FakeMetadata.Title: FakeMetadata,
 					},
@@ -235,7 +235,7 @@ func TestMetadataGet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup(client)
 			t.Cleanup(func() {
-				_, _ = client.Collection("projects").Doc(testUid).Delete(context.TODO())
+				_, _ = client.Collection(os.Getenv("METADATA_COLLECTION")).Doc(testUid).Delete(context.TODO())
 			})
 
 			store := NewMetadataStore(client, os.Getenv("METADATA_COLLECTION"))
@@ -268,7 +268,7 @@ func TestMetadataRemove(t *testing.T) {
 		{
 			name: "Existent metadata",
 			setup: func(c *firestore.Client) {
-				_, _ = client.Collection("projects").Doc(testUid).Set(
+				_, _ = client.Collection(os.Getenv("METADATA_COLLECTION")).Doc(testUid).Set(
 					context.TODO(),
 					FakeMetadata,
 				)
@@ -283,7 +283,7 @@ func TestMetadataRemove(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup(client)
 			t.Cleanup(func() {
-				_, _ = client.Collection("projects").Doc(testUid).Delete(context.TODO())
+				_, _ = client.Collection(os.Getenv("METADATA_COLLECTION")).Doc(testUid).Delete(context.TODO())
 			})
 
 			store := NewMetadataStore(client, os.Getenv("METADATA_COLLECTION"))
@@ -312,7 +312,7 @@ func TestMetadataRemoveAll(t *testing.T) {
 		{
 			name: "Existent metadata",
 			setup: func(c *firestore.Client) {
-				_, _ = client.Collection("projects").Doc(testUid).Set(
+				_, _ = client.Collection(os.Getenv("METADATA_COLLECTION")).Doc(testUid).Set(
 					context.TODO(),
 					FakeMetadata,
 				)
@@ -326,7 +326,7 @@ func TestMetadataRemoveAll(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup(client)
 			t.Cleanup(func() {
-				_, _ = client.Collection("projects").Doc(testUid).Delete(context.TODO())
+				_, _ = client.Collection(os.Getenv("METADATA_COLLECTION")).Doc(testUid).Delete(context.TODO())
 			})
 
 			store := NewMetadataStore(client, os.Getenv("METADATA_COLLECTION"))
