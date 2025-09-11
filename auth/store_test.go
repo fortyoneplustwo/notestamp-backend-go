@@ -2,7 +2,7 @@ package auth
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"os"
 	"testing"
 	"time"
@@ -13,34 +13,31 @@ import (
 
 var (
 	testToken = "testToken"
+	client    *firestore.Client
 )
 
-func initClient() (*firestore.Client, error) {
+func TestMain(m *testing.M) {
 	if err := godotenv.Load("../.env"); err != nil {
-		return nil, err
+		log.Fatalf("failed to load .env: %v", err)
 	}
-	ctx := context.TODO()
-	client, err := firestore.NewClient(ctx, os.Getenv("FIREBASE_PROJECT_ID"))
-	if err != nil {
-		return nil, err
-	}
-	return client, nil
-}
 
-func closeClient(c *firestore.Client) {
-	if err := c.Close(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error closing client: %q", err)
+	ctx := context.TODO()
+	c, err := firestore.NewClient(ctx, os.Getenv("FIREBASE_PROJECT_ID"))
+	if err != nil {
+		log.Fatalf("failed to init client: %v", err)
 	}
+	client = c
+
+	exitCode := m.Run()
+
+	if err := c.Close(); err != nil {
+		log.Printf("Error closing client: %v", err)
+	}
+
+	os.Exit(exitCode)
 }
 
 func TestRevokedTokenAdd(t *testing.T) {
-	client, err := initClient()
-	if err != nil {
-		t.Error(err)
-	}
-	defer closeClient(client)
-	store := NewRevokedTokenStore(client)
-
 	cases := []struct {
 		name       string
 		setup      func(c *firestore.Client)
@@ -62,7 +59,8 @@ func TestRevokedTokenAdd(t *testing.T) {
 				_, _ = client.Collection("revoked").Doc(testToken).Delete(context.TODO())
 			})
 
-			err = store.RevokedTokenAdd(testToken, time.Now())
+			store := NewRevokedTokenStore(client, os.Getenv("REVOKED_COLLECTION"))
+			err := store.RevokedTokenAdd(testToken, time.Now())
 
 			if tt.wantErr {
 				if err == nil {
@@ -78,13 +76,6 @@ func TestRevokedTokenAdd(t *testing.T) {
 }
 
 func TestRevokedTokenCheck(t *testing.T) {
-	client, err := initClient()
-	if err != nil {
-		t.Error(err)
-	}
-	defer closeClient(client)
-	store := NewRevokedTokenStore(client)
-
 	cases := []struct {
 		name       string
 		setup      func(c *firestore.Client)
@@ -119,6 +110,7 @@ func TestRevokedTokenCheck(t *testing.T) {
 				_, _ = client.Collection("revoked").Doc(testToken).Delete(context.TODO())
 			})
 
+			store := NewRevokedTokenStore(client, os.Getenv("REVOKED_COLLECTION"))
 			found, err := store.RevokedTokenCheck(testToken)
 
 			if tt.wantErr {
