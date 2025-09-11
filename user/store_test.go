@@ -2,7 +2,7 @@ package user
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"os"
 	"testing"
 
@@ -14,34 +14,32 @@ var (
 	testUid   = ""
 	testEmail = FakeCredentials.Email
 	testPwd   = FakeCredentials.Password
+
+	client *firestore.Client
 )
 
-func initClient() (*firestore.Client, error) {
+func TestMain(m *testing.M) {
 	if err := godotenv.Load("../.env"); err != nil {
-		return nil, err
+		log.Fatalf("failed to load .env: %v", err)
 	}
-	ctx := context.TODO()
-	client, err := firestore.NewClient(ctx, os.Getenv("FIREBASE_PROJECT_ID"))
-	if err != nil {
-		return nil, err
-	}
-	return client, nil
-}
 
-func closeClient(c *firestore.Client) {
-	if err := c.Close(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error closing client: %q", err)
+	ctx := context.TODO()
+	c, err := firestore.NewClient(ctx, os.Getenv("FIREBASE_PROJECT_ID"))
+	if err != nil {
+		log.Fatalf("failed to init client: %v", err)
 	}
+	client = c
+
+	exitCode := m.Run()
+
+	if err := c.Close(); err != nil {
+		log.Printf("Error closing client: %v", err)
+	}
+
+	os.Exit(exitCode)
 }
 
 func TestUserAdd(t *testing.T) {
-	client, err := initClient()
-	if err != nil {
-		t.Error(err)
-	}
-	defer closeClient(client)
-	store := NewUserStore(client)
-
 	cases := []struct {
 		name       string
 		setup      func(*firestore.Client)
@@ -78,6 +76,7 @@ func TestUserAdd(t *testing.T) {
 				_, _ = client.Collection("users").Doc(testUid).Delete(context.TODO())
 			})
 
+			store := NewUserStore(client, os.Getenv("USER_COLLECTION"))
 			uid, err := store.UserAdd(Credentials{tt.inputEmail, tt.inputPwd})
 
 			if tt.wantErr {
@@ -95,16 +94,6 @@ func TestUserAdd(t *testing.T) {
 }
 
 func TestUserGetByEmail(t *testing.T) {
-	client, err := initClient()
-	if err != nil {
-		t.Error(err)
-	}
-	defer closeClient(client)
-	t.Cleanup(func() {
-		_, _ = client.Collection("users").Doc(testUid).Delete(context.TODO())
-	})
-	store := NewUserStore(client)
-
 	cases := []struct {
 		name       string
 		setup      func(*firestore.Client)
@@ -138,6 +127,7 @@ func TestUserGetByEmail(t *testing.T) {
 				_, _ = client.Collection("users").Doc(testUid).Delete(context.TODO())
 			})
 
+			store := NewUserStore(client, os.Getenv("USER_COLLECTION"))
 			_, err := store.UserGetByEmail(testEmail)
 
 			if tt.wantErr {
@@ -154,16 +144,6 @@ func TestUserGetByEmail(t *testing.T) {
 }
 
 func TestUserGetById(t *testing.T) {
-	client, err := initClient()
-	if err != nil {
-		t.Error(err)
-	}
-	defer closeClient(client)
-	t.Cleanup(func() {
-		_, _ = client.Collection("users").Doc(testUid).Delete(context.TODO())
-	})
-	store := NewUserStore(client)
-
 	cases := []struct {
 		name     string
 		setup    func(*firestore.Client)
@@ -197,6 +177,7 @@ func TestUserGetById(t *testing.T) {
 				_, _ = client.Collection("users").Doc(testUid).Delete(context.TODO())
 			})
 
+			store := NewUserStore(client, os.Getenv("USER_COLLECTION"))
 			user, err := store.UserGetById(testUid)
 
 			if tt.wantErr {
@@ -214,13 +195,6 @@ func TestUserGetById(t *testing.T) {
 }
 
 func TestUserRemove(t *testing.T) {
-	client, err := initClient()
-	if err != nil {
-		t.Error(err)
-	}
-	defer closeClient(client)
-	store := NewUserStore(client)
-
 	cases := []struct {
 		name     string
 		setup    func(*firestore.Client)
@@ -254,6 +228,7 @@ func TestUserRemove(t *testing.T) {
 				_, _ = client.Collection("users").Doc(testUid).Delete(context.TODO())
 			})
 
+			store := NewUserStore(client, os.Getenv("USER_COLLECTION"))
 			err := store.UserRemove(testUid)
 
 			if tt.wantErr {
