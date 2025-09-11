@@ -68,9 +68,15 @@ func main() {
 	}()
 
 	userStore := user.NewUserStore(firestoreClient)
-	revokedStore := auth.NewRevokedTokenStore(firestoreClient)
+	revokedStore := auth.NewRevokedTokenStore(
+		firestoreClient,
+		os.Getenv("REVOKED_COLLECTION"),
+	)
 	stagingArea := staging.NewStagingArea(redisClient, time.Hour)
-	metadataStore := metadata.NewMetadataStore(firestoreClient)
+	metadataStore := metadata.NewMetadataStore(
+		firestoreClient,
+		os.Getenv("METADATA_COLLECTION"),
+	)
 	mediaStore := media.NewMediaStore(storageClient, os.Getenv("NOTES_BUCKET"))
 	notesStore := notes.NewNotesStore(storageClient, os.Getenv("MEDIA_BUCKET"))
 
